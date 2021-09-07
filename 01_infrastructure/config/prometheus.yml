@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'appmetrica_unloader'
+    static_configs:
+      - targets: [ '127.0.0.1:7000' ]
+  #      - targets: ['host.docker.internal:8005']
+  - job_name: 'appmetrica_repeater'
+    static_configs:
+      - targets: [ '127.0.0.1:7001' ]
+
+  - job_name: 'appmetrica_db_loader'
+    static_configs:
+      - targets: [ '127.0.0.1:7003' ]
+
+  #  Moderator checker
+  - job_name: 'moderator_event_processor'
+    static_configs:
+      - targets: [ '5.45.70.214:7000' ]
+
