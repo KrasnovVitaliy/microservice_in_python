@@ -1,6 +1,5 @@
 import logging
 import aiohttp
-import json
 import metrics
 
 from typing import List, Dict
@@ -8,7 +7,7 @@ from typing import List, Dict
 logger = logging.getLogger(__name__)
 
 
-class CurrateProvider:
+class DataProvider:
     def __init__(self, access_key: str, base_url: str):
         self.access_key = access_key
         self.base_url = base_url
@@ -21,7 +20,7 @@ class CurrateProvider:
             async with session.get(path, params=params) as rsp:
                 if rsp.status == 200:
                     metrics.SUCCESS_RESPONSE_CNT.inc()
-                    return json.loads(await rsp.text())
+                    return await rsp.json()
                 else:
                     metrics.ERROR_RESPONSE_CNT.inc()
                     logger.error(rsp.status)
@@ -30,11 +29,5 @@ class CurrateProvider:
 
     async def get_pairs(self) -> Dict:
         logger.debug("Get pairs")
-        params = {
-            "get": "rates",
-            "pairs": "USDRUB,EURRUB"
-        }
-        rsp = await self.__send_request(path=self.base_url, params=params)
-        if 'data' in rsp:
-            return rsp['data']
-        return {}
+        rsp = await self.__send_request(path=self.base_url, params={})
+        return rsp
