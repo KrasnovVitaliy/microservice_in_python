@@ -4,11 +4,10 @@ import faust
 import json
 from aiohttp.web import Response, Request
 import config_loader as config_loader
-import data_provider
 import metrics
 from prometheus_client import start_http_server
 
-SERVICE_NAME = "data-requester"
+SERVICE_NAME = "data-processor"
 config = config_loader.Config()
 
 logging.basicConfig(
@@ -20,17 +19,20 @@ logger = logging.getLogger(__name__)
 app = faust.App(SERVICE_NAME, broker=config.get(config_loader.KAFKA_BROKER), value_serializer='raw',
                 web_host=config.get(config_loader.WEB_HOST), web_port=config.get(config_loader.WEB_PORT))
 src_data_topic = app.topic(config.get(config_loader.SRC_DATA_TOPIC), partitions=8)
+processed_data_topic = app.topic(config.get(config_loader.PROCESSED_DATA_TOPIC), partitions=8)
 
 
-@app.timer(interval=1.0)
-async def request_data():
-    provider = data_provider.DataProvider(access_key=config.get(config_loader.API_KEY),
-                                                base_url=config.get(config_loader.BASE_URL))
-    pairs = await provider.get_pairs()
-    metrics.REQUEST_CNT.inc()
-    logger.info(f"Received new pairs: {pairs}")
-    if pairs:
-        await src_data_topic.send(key=uuid.uuid1().bytes, value=json.dumps(pairs).encode())
+@app.agent(src_data_topic)
+async def on_event(stream):
+    metrics.SRC_DATA_RECEIVED_CNT.inc()
+    async for msg_key, msg_value in stream.items():
+        logger.info(f'Received new pending message {msg_value}')
+        serialized_message = json.loads(msg_value)
+        for pair_name, pair_value in serialized_message.items():
+            logger.info(f"Extracted pair: {pair_name}: {pair_value}")
+            metrics.PROCESSED_PAIRS_CNT.inc()
+            await processed_data_topic.send(key=msg_key, value=json.dumps({pair_name: pair_value}).encode())
+            metrics.PROCESSED_DATA_SENT_CNT.inc()
 
 
 @app.task
