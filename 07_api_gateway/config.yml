@@ -2,4 +2,6 @@ LOGGING_LEVEL: 'INFO'
 LOGGING_FORMAT: '%(asctime)-15s | %(levelname)s | %(filename)s | %(lineno)d: %(message)s'
 
 WEB_HOST: '0.0.0.0'
-WEB_PORT: 8002
+WEB_PORT: 8007
+
+DB_URI: "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/currencies"

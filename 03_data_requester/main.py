@@ -2,7 +2,6 @@ import uuid
 import logging
 import faust
 import json
-from aiohttp.web import Response, Request
 import config_loader as config_loader
 import data_provider
 import metrics
@@ -23,9 +22,9 @@ src_data_topic = app.topic(config.get(config_loader.SRC_DATA_TOPIC), partitions=
 
 
 @app.timer(interval=1.0)
-async def request_data():
+async def request_data() -> None:
     provider = data_provider.DataProvider(access_key=config.get(config_loader.API_KEY),
-                                                base_url=config.get(config_loader.BASE_URL))
+                                          base_url=config.get(config_loader.BASE_URL))
     pairs = await provider.get_pairs()
     metrics.REQUEST_CNT.inc()
     logger.info(f"Received new pairs: {pairs}")
@@ -34,6 +33,6 @@ async def request_data():
 
 
 @app.task
-async def on_started():
+async def on_started() -> None:
     logger.info('Starting prometheus server')
     start_http_server(port=config.get(config_loader.PROMETHEUS_PORT))

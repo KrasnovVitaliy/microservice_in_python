@@ -2,10 +2,12 @@ LOGGING_LEVEL: 'INFO'
 LOGGING_FORMAT: '%(asctime)-15s | %(levelname)s | %(filename)s | %(lineno)d: %(message)s'
 
 WEB_HOST: '127.0.0.1'
-WEB_PORT: 8004
+WEB_PORT: 8006
 
 KAFKA_BROKER: "127.0.0.1:9093"
-SRC_DATA_TOPIC: "src-data"
 PROCESSED_DATA_TOPIC: "processed-data"
+AVERAGE_CHANGELOG_TOPIC: "data-aggregator-average-changelog"
 
-PROMETHEUS_PORT: 7004
+DB_URI: "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/currencies"
+
+PROMETHEUS_PORT: 7006

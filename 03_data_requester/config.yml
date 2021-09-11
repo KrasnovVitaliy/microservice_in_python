@@ -2,7 +2,7 @@ LOGGING_LEVEL: 'INFO'
 LOGGING_FORMAT: '%(asctime)-15s | %(levelname)s | %(filename)s | %(lineno)d: %(message)s'
 
 WEB_HOST: '127.0.0.1'
-WEB_PORT: 8001
+WEB_PORT: 8003
 
 BASE_URL: 'http://localhost:8000/pairs'
 API_KEY: '2b816399d134da99b19b3cc54940b848'
@@ -11,4 +11,4 @@ REQUEST_SCHEDULER_TIME_INTERVAL_SECONDS: 10
 KAFKA_BROKER: "127.0.0.1:9093"
 SRC_DATA_TOPIC: "src-data"
 
-PROMETHEUS_PORT: 7001
+PROMETHEUS_PORT: 7003

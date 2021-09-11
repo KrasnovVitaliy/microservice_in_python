@@ -1,0 +1,7 @@
+uvloop
+asyncio
+aiohttp
+fastapi
+uvicorn[standard]
+starlette_exporter
+prometheus-client
