@@ -1,0 +1,174 @@
+version: '3'
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:${CONFLUENT_VERSION}
+    depends_on:
+      - zookeeper
+    ports:
+      - ${KAFKA_PORT}:9092
+      - ${KAFKA_LOCALHOST_PORT}:9093
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,PLAINTEXT://0.0.0.0:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,PLAINTEXT://localhost:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_MESSAGE_MAX_BYTES: 10485760
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 100001200
+    restart: always
+    volumes:
+      - ./kafka-data:/var/lib/kafka/data
+
+  zookeeper:
+    image: zookeeper:${ZK_VERSION}
+    ports:
+      - ${ZK_PORT}:2181
+    restart: always
+    volumes:
+      - ./zk-data:/var/lib/zookeeper/data \
+      - ./zk-txn-logs:/var/lib/zookeeper/log \
+
+  kafka-actualizer:
+    image: confluentinc/cp-kafka:${CONFLUENT_VERSION}
+    depends_on:
+      - kafka
+    volumes:
+      - ./01_infrastructure/docker/wait-for-it.sh:/wait-for-it.sh
+    command: |
+      bash -c '/wait-for-it.sh --timeout=0 -s kafka:9092 && \
+      kafka-topics --create --if-not-exists --topic src-data --partitions 8 --replication-factor 1 --zookeeper zookeeper:2181 && \
+      kafka-topics --create --if-not-exists --topic processed-data --partitions 8 --replication-factor 1 --zookeeper zookeeper:2181 && \
+      kafka-topics --create --if-not-exists --topic aggregated-data --partitions 8 --replication-factor 1 --zookeeper zookeeper:2181 && \
+      exit 0'
+    environment:
+      KAFKA_BROKER_ID: ignored
+      KAFKA_ZOOKEEPER_CONNECT: ignored
+
+  db:
+    image: postgres:${PG_VERSION}
+    restart: always
+    environment:
+      POSTGRES_DB: currencies
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./postgres-data:/var/lib/postgresql
+    ports:
+      - ${PG_PORT}:5432
+
+  pgadmin:
+    image: chorss/docker-pgadmin4
+    restart: always
+    volumes:
+      - ./pgadmin:/data
+    ports:
+      - ${PG_ADMIN_PORT}:5050
+    depends_on:
+      - db
+
+  prometheus:
+    image: quay.io/prometheus/prometheus:${PROMETHEUS_VERSION}
+    ports:
+      - ${PROMETHEUS_PORT}:9090
+    volumes:
+      - ./01_infrastructure/config/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION}
+    user: root
+    restart: always
+    ports:
+      - ${GRAFANA_PORT}:3000
+    volumes:
+      - ./grafana-data/data:/var/lib/grafana
+      - ./grafana-data/certs:/certs
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  # Microservices
+  demo_server:
+    build:
+      context: ./02_demo_server
+    restart: always
+    depends_on:
+      - kafka-actualizer
+    ports:
+      - ${DEMO_SERVER_PORT}:8002
+    environment:
+      - PORT=8002
+      - HOST=0.0.0.0
+
+  data_requester:
+    build:
+      context: ./03_data_requester
+    restart: always
+    depends_on:
+      - kafka-actualizer
+    ports:
+      - ${DATA_REQUESTER_PORT}:8003
+    environment:
+      - DATA_PROCESSOR_WEB_HOST=0.0.0.0
+      - DATA_PROCESSOR_WEB_PORT=8003
+      - DATA_REQUESTER_KAFKA_BROKER=kafka:9092
+      - DATA_REQUESTER_BASE_URL=http://demo_server:8002/pairs
+
+  data_processor:
+    build:
+      context: ./04_data_processor
+    restart: always
+    depends_on:
+      - kafka-actualizer
+    ports:
+      - ${DATA_PROCESSOR_PORT}:8004
+    environment:
+      - DATA_PROCESSOR_WEB_HOST=0.0.0.0
+      - DATA_PROCESSOR_WEB_PORT=8004
+      - DATA_PROCESSOR_KAFKA_BROKER=kafka:9092
+
+  data_aggregator:
+    build:
+      context: ./05_data_aggregator
+    restart: always
+    depends_on:
+      - kafka-actualizer
+    ports:
+      - ${DATA_AGGREGATOR_PORT}:8005
+    environment:
+      - DATA_AGGREGATOR_WEB_HOST=0.0.0.0
+      - DATA_AGGREGATOR_WEB_PORT=8005
+      - DATA_AGGREGATOR_KAFKA_BROKER=kafka:9092
+
+  db_loader:
+    build:
+      context: ./06_db_loader
+    restart: always
+    depends_on:
+      - kafka-actualizer
+    ports:
+      - ${DB_LOADER_PORT}:8006
+    environment:
+      - DB_LOADER_WEB_HOST=0.0.0.0
+      - DB_LOADER_WEB_PORT=8006
+      - DB_LOADER_KAFKA_BROKER=kafka:9092
+      - DB_LOADER_DB_URI=postgresql+asyncpg://postgres:postgres@db:5432/currencies
+
+  api_gateway:
+    build:
+      context: ./07_api_gateway
+    restart: always
+    depends_on:
+      - kafka-actualizer
+    ports:
+      - ${API_GATEWAY_PORT}:8007
+    environment:
+      - PORT=8007
+      - HOST=0.0.0.0
+      - API_GATEWAY_DB_URI=postgresql+asyncpg://postgres:postgres@db:5432/currencies

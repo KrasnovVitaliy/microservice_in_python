@@ -10,7 +10,7 @@ class Config(metaclass=MetaSingleton):
     def __init__(self, config_file_path=f'{config_abs_path}/config.yml'):
         self.config_loader = ConfigLoader()
         self.config_loader.update_from_yaml_file(config_file_path)
-        self.config_loader.update_from_env_namespace('APPM_REPEATER')
+        self.config_loader.update_from_env_namespace('DATA_PROCESSOR')
 
     def get(self, setting_name):
         return self.config_loader.get(setting_name, None)
@@ -24,9 +24,7 @@ LOGGING_LEVEL = "LOGGING_LEVEL"
 LOGGING_FORMAT = "LOGGING_FORMAT"
 WEB_HOST = "WEB_HOST"
 WEB_PORT = "WEB_PORT"
-BASE_URL = "BASE_URL"
-API_KEY = "API_KEY"
-REQUEST_SCHEDULER_TIME_INTERVAL_SECONDS = "REQUEST_SCHEDULER_TIME_INTERVAL_SECONDS"
 KAFKA_BROKER = "KAFKA_BROKER"
 SRC_DATA_TOPIC = "SRC_DATA_TOPIC"
+PROCESSED_DATA_TOPIC = "PROCESSED_DATA_TOPIC"
 PROMETHEUS_PORT = "PROMETHEUS_PORT"

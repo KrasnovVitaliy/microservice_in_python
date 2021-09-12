@@ -23,8 +23,7 @@ src_data_topic = app.topic(config.get(config_loader.SRC_DATA_TOPIC), partitions=
 
 @app.timer(interval=1.0)
 async def request_data() -> None:
-    provider = data_provider.DataProvider(access_key=config.get(config_loader.API_KEY),
-                                          base_url=config.get(config_loader.BASE_URL))
+    provider = data_provider.DataProvider(base_url=config.get(config_loader.BASE_URL))
     pairs = await provider.get_pairs()
     metrics.REQUEST_CNT.inc()
     logger.info(f"Received new pairs: {pairs}")

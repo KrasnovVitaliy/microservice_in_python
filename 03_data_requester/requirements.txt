@@ -1,5 +1,0 @@
-asyncio
-aiohttp
-configloader
-faust[rocksdb, fast, uvloop]
-prometheus-client

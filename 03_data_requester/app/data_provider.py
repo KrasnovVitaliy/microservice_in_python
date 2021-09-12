@@ -8,14 +8,12 @@ logger = logging.getLogger(__name__)
 
 
 class DataProvider:
-    def __init__(self, access_key: str, base_url: str):
-        self.access_key = access_key
+    def __init__(self, base_url: str):
         self.base_url = base_url
 
     async def __send_request(self, path: str, params: Dict) -> Dict:
         logger.debug("Send HTTP request")
         logger.debug(f"Full path: {path} params: {params}")
-        params['key'] = self.access_key
         async with aiohttp.ClientSession() as session:
             async with session.get(path, params=params) as rsp:
                 if rsp.status == 200:
