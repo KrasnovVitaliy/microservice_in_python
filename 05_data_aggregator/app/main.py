@@ -24,8 +24,8 @@ average_table = app.Table('average', default=dict)
 
 @app.agent(processed_data_topic)
 async def on_event(stream) -> None:
-    metrics.PROCESSED_DATA_RECEIVED_CNT.inc()
     async for msg_key, msg_value in stream.items():
+        metrics.PROCESSED_DATA_RECEIVED_CNT.inc()
         logger.info(f'Received new processed data message {msg_value}')
         serialized_message = json.loads(msg_value)
         for pair_name, pair_value in serialized_message.items():
@@ -39,6 +39,7 @@ async def on_event(stream) -> None:
                 average_value['average'] = pair_value
             logger.info(f"Aggregated value: {average_value}")
             average_table[pair_name] = average_value
+            metrics.PAIRS_AVERAGE_AGGREGATED_CNT.inc()
 
 
 @app.task

@@ -22,8 +22,8 @@ processed_data_topic = app.topic(config.get(config_loader.PROCESSED_DATA_TOPIC),
 
 @app.agent(src_data_topic)
 async def on_event(stream) -> None:
-    metrics.SRC_DATA_RECEIVED_CNT.inc()
     async for msg_key, msg_value in stream.items():
+        metrics.SRC_DATA_RECEIVED_CNT.inc()
         logger.info(f'Received new pair message {msg_value}')
         serialized_message = json.loads(msg_value)
         for pair_name, pair_value in serialized_message.items():
