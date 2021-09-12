@@ -3,20 +3,23 @@ global:
   evaluation_interval: 5s
 
 scrape_configs:
-  - job_name: 'appmetrica_unloader'
+  - job_name: 'demo_server'
+    metrics_path: /metrics
     static_configs:
-      - targets: [ '127.0.0.1:7000' ]
-  #      - targets: ['host.docker.internal:8005']
-  - job_name: 'appmetrica_repeater'
+      - targets: [ 'demo_server:8002' ]
+  - job_name: 'data_requester'
     static_configs:
-      - targets: [ '127.0.0.1:7001' ]
-
-  - job_name: 'appmetrica_db_loader'
+      - targets: [ 'data_requester:7003' ]
+  - job_name: 'data_processor'
     static_configs:
-      - targets: [ '127.0.0.1:7003' ]
-
-  #  Moderator checker
-  - job_name: 'moderator_event_processor'
+      - targets: [ 'data_processor:7004' ]
+  - job_name: 'data_aggregator'
     static_configs:
-      - targets: [ '5.45.70.214:7000' ]
-
+      - targets: [ 'data_aggregator:7005' ]
+  - job_name: 'db_loader'
+    static_configs:
+      - targets: [ 'db_loader:7006' ]
+  - job_name: 'api_gateway'
+    metrics_path: /metrics
+    static_configs:
+      - targets: [ 'api_gateway:8007' ]
