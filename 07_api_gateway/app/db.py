@@ -30,12 +30,12 @@ class DB(metaclass=MetaSingleton):
             d[column.name] = str(getattr(row, column.name))
         return d
 
-    async def get_currencies(self, pair_name) -> List[Dict]:
+    async def get_currencies(self, pair_name: str, limit: int) -> List[Dict]:
         async with AsyncSession(self.db_engine) as session:
             async with session.begin():
                 selected_currencies_execution = await session.execute(
                     select(Currencies).filter(Currencies.pair_name == pair_name).order_by(Currencies.id.desc()).limit(
-                        10))
+                        limit))
                 selected_currencies = selected_currencies_execution.scalars().all()
                 ret_data = [self.__row_to_dict(i) for i in selected_currencies]
                 return ret_data

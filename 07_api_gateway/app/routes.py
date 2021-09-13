@@ -11,9 +11,9 @@ db = DB()
 
 
 @router.get("/pairs/currencies", tags=["pairs"])
-async def get_currencies(pair_name: str) -> List[Dict]:
+async def get_currencies(pair_name: str, limit: int = 10) -> List[Dict]:
     metrics.GET_CURRENCIES_CNT.inc()
-    return await db.get_currencies(pair_name)
+    return await db.get_currencies(pair_name, limit)
 
 
 @router.get("/pairs/average", tags=["pairs"])

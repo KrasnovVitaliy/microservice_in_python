@@ -6,8 +6,11 @@ from starlette_exporter import PrometheusMiddleware, handle_metrics
 import config_loader as config_loader
 import routes
 
-
 config = config_loader.Config()
+
+logging.basicConfig(
+    level=logging.getLevelName(config.get(config_loader.LOGGING_LEVEL)),
+    format=config.get(config_loader.LOGGING_FORMAT))
 
 logger = logging.getLogger("uvicorn.error")
 

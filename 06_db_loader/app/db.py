@@ -1,11 +1,9 @@
 import logging
 import asyncio
-import datetime
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from models import Currencies, Average
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import update
 from sqlalchemy.future import select
 
 from singleton import MetaSingleton
