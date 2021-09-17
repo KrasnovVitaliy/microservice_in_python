@@ -32,6 +32,8 @@ async def on_event(stream) -> None:
             await processed_data_topic.send(key=msg_key, value=json.dumps({pair_name: pair_value}).encode())
             metrics.PROCESSED_DATA_SENT_CNT.inc()
 
+            yield msg_value
+
 
 @app.task
 async def on_started() -> None:
